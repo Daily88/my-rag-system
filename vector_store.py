@@ -1,4 +1,3 @@
-'''
 import os
 from typing import List, Dict
 import chromadb
@@ -237,68 +236,3 @@ class VectorStore:
             filename = meta.get("filename", "未知文档")
             filename_set.add(filename)
         return sorted(list(filename_set))
-'''
-import os
-import chromadb
-from chromadb.config import Settings
-from chromadb.utils import embedding_functions
-
-class VectorStore:
-    def __init__(self, db_path: str = "./chroma_db", embedding_model: str = "all-MiniLM-L6-v2"):
-        """
-        向量存储类，自动适配 Streamlit Cloud 与本地环境
-        :param db_path: 本地持久化数据库路径（仅本地环境生效）
-        :param embedding_model: 嵌入模型名称
-        """
-        # 1. 自动判断运行环境，选择对应客户端
-        # Streamlit Cloud 环境使用 EphemeralClient（内存型），本地使用 PersistentClient（持久化型）
-        is_streamlit_cloud = os.environ.get("STREAMLIT_RUN_ON_CLOUD", False) or "mount/src" in os.getcwd()
-        
-        if is_streamlit_cloud:
-            # Streamlit Cloud 无状态环境：使用内存客户端
-            self.chroma_client = chromadb.EphemeralClient(
-                settings=Settings(anonymized_telemetry=False)
-            )
-            print("✅ 已适配 Streamlit Cloud 环境，使用 EphemeralClient（内存型向量库）")
-        else:
-            # 本地环境：使用持久化客户端，保留数据
-            os.makedirs(db_path, exist_ok=True)
-            self.chroma_client = chromadb.PersistentClient(
-                path=db_path,
-                settings=Settings(anonymized_telemetry=False)
-            )
-            print(f"✅ 本地环境，使用 PersistentClient，数据持久化至 {db_path}")
-
-        # 2. 初始化嵌入函数（保持原逻辑不变）
-        self.embedding_func = embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name=embedding_model
-        )
-
-        # 3. 获取或创建集合（保持原逻辑不变）
-        self.collection = self.chroma_client.get_or_create_collection(
-            name="rag_collection",
-            embedding_function=self.embedding_func
-        )
-
-    # -------------------------- 以下是你原有的业务方法，保持不变 --------------------------
-    def add_documents(self, documents: list[str], metadatas: list[dict] = None, ids: list[str] = None):
-        """向向量库添加文档"""
-        if ids is None:
-            ids = [f"doc_{i}" for i in range(len(documents))]
-        self.collection.add(
-            documents=documents,
-            metadatas=metadatas,
-            ids=ids
-        )
-
-    def search(self, query: str, top_k: int = 5):
-        """根据查询检索相似文档"""
-        results = self.collection.query(
-            query_texts=[query],
-            n_results=top_k
-        )
-        return results
-
-    def clear_collection(self):
-        """清空集合数据"""
-        self.collection.delete(where={})
