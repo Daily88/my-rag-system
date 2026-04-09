@@ -13,17 +13,14 @@ pandas>=1.5.3
 tqdm>=4.65.0
 pillow>=9.0.0
 pytesseract>=0.3.10
-# 原有依赖保留，新增以下内容
 jieba>=0.42.1
 pickle-mixin>=1.0.2
-langchain
 langchain-community
 langchain-text-splitters
 pypdf
 python-docx
-sentence-transformers
-torch
-sentence-transformers
-jieba
+torch>=2.0.0
+torchvision>=0.15.0          # 添加这一行！
 plotly
 matplotlib
+dashscope>=1.14.0
